@@ -1,1328 +1,856 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анализ опроса: ИИ-чат-бот для регламентов</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            /* Брендбук: основные цвета */
-            --brand-purple: #990099;
-            --brand-pink: #ff0066;
-            --brand-orange: #ff9534;
-            /* Текст по брендбуку */
-            --text-on-light: #5b4c97;
-            --text-on-dark: #FFFFFF;
-            /* Поверхности и фон */
-            --paper: #faf8fc;
-            --dark-surface: #2d1b4e;
-            /* Системные */
-            --muted: #8a7fa3;
-            --rule: #d1c4e0;
-            --highlight: #f3eff9;
-            --highlight-warn: #fff5eb;
-            --highlight-critical: #ffebf0;
-            --accent-surface: #990099;
-            --accent-surface2: #ff0066;
-            --accent-main: #ff9534;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: var(--paper);
-            color: var(--text-on-light);
-            font-family: 'IBM Plex Sans', sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .cover {
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-            padding: 64px 48px 48px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cover::before {
-            content: '';
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 320px;
-            height: 320px;
-            border: 40px solid var(--accent-main);
-            border-radius: 50%;
-            opacity: 0.12;
-        }
-
-        .cover-label {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--accent-main);
-            margin-bottom: 20px;
-        }
-
-        .cover-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(28px, 5vw, 52px);
-            font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 16px;
-            max-width: 640px;
-        }
-
-        .cover-sub {
-            color: #ccc;
-            font-size: 14px;
-            font-weight: 300;
-            max-width: 520px;
-        }
-
-        .cover-meta {
-            margin-top: 40px;
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
-
-        .meta-num {
-            font-family: 'Playfair Display', serif;
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--accent-main);
-        }
-
-        .meta-label {
-            font-size: 11px;
-            color: #aaa;
-            font-family: 'IBM Plex Mono', monospace;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .body {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 48px 32px;
-        }
-
-        .section {
-            margin-bottom: 56px;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: baseline;
-            gap: 14px;
-            margin-bottom: 28px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--text-on-light);
-        }
-
-        .section-num {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            color: var(--accent-main);
-            letter-spacing: 0.12em;
-        }
-
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-on-light);
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-            padding: 20px;
-        }
-
-        .stat-card.light {
-            background: var(--highlight);
-            color: var(--text-on-light);
-        }
-
-        .stat-card.accent-main {
-            background: var(--accent-main);
-            color: var(--text-on-light);
-        }
-
-        .stat-card.accent-purple {
-            background: var(--brand-purple);
-            color: var(--text-on-dark);
-        }
-
-        .stat-card.accent-pink {
-            background: var(--brand-pink);
-            color: var(--text-on-dark);
-        }
-
-        .stat-big {
-            font-family: 'Playfair Display', serif;
-            font-size: 38px;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-
-        .stat-unit {
-            font-size: 13px;
-            font-weight: 500;
-            opacity: 0.85;
-        }
-
-        .stat-desc {
-            font-size: 10px;
-            font-family: 'IBM Plex Mono', monospace;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-top: 6px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            text-align: left;
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--rule);
-        }
-
-        .data-table th.right {
-            text-align: right;
-        }
-
-        .data-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--rule);
-            vertical-align: middle;
-            font-size: 13px;
-            color: var(--text-on-light);
-        }
-
-        .data-table td.right {
-            text-align: right;
-        }
-
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .data-table tr.total td {
-            font-weight: 700;
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-        }
-
-        .data-table tr.total td.accent-num {
-            color: var(--accent-main);
-            font-family: 'Playfair Display', serif;
-            font-size: 17px;
-        }
-
-        .num {
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
-        .accent-num {
-            color: var(--brand-pink);
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 500;
-        }
-
-        .accent2-num {
-            color: var(--brand-purple);
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 500;
-        }
-
-        .role-bold {
-            font-weight: 600;
-        }
-
-        .bar-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-
-        .bar-label {
-            width: 90px;
-            font-size: 12px;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--muted);
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .bar-track {
-            flex: 1;
-            height: 22px;
-            background: var(--rule);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            background: var(--text-on-light);
-        }
-
-        .bar-val {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 11px;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--muted);
-        }
-
-        .bar-val.on-dark {
-            color: var(--text-on-dark);
-        }
-
-        .wish-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        @media (max-width: 600px) {
-            .wish-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .wish-card {
-            border: 1px solid var(--rule);
-            padding: 16px;
-            background: var(--paper);
-        }
-
-        .wish-card-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .wish-icon {
-            font-size: 20px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .wish-name {
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-on-light);
-        }
-
-        .wish-count {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            color: var(--brand-pink);
-            margin-bottom: 6px;
-        }
-
-        .wish-examples {
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        .wish-examples em {
-            font-style: italic;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .quote-block {
-            border-left: 3px solid var(--accent-main);
-            padding: 12px 16px;
-            margin-bottom: 10px;
-            background: var(--highlight);
-        }
-
-        .quote-block.critical {
-            border-left-color: var(--muted);
-            background: #f0eeec;
-        }
-
-        .quote-text {
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .quote-role {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .roi-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 24px;
-        }
-
-        .roi-table thead th {
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-            padding: 11px 14px;
-            text-align: left;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .roi-table thead th.right {
-            text-align: right;
-        }
-
-        .roi-table tbody td {
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--rule);
-            font-size: 13px;
-            color: var(--text-on-light);
-        }
-
-        .roi-table tbody td.right {
-            text-align: right;
-        }
-
-        .roi-table tbody tr:nth-child(even) td {
-            background: var(--highlight);
-        }
-
-        .roi-table tfoot td {
-            padding: 12px 14px;
-            font-weight: 700;
-            font-size: 14px;
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-        }
-
-        .roi-table tfoot td.right {
-            text-align: right;
-        }
-
-        .roi-table tfoot .big {
-            font-family: 'Playfair Display', serif;
-            font-size: 20px;
-            color: var(--accent-main);
-        }
-
-        .scenario-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        @media (max-width: 600px) {
-            .scenario-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .scenario-card {
-            padding: 20px;
-            border: 1px solid var(--rule);
-            position: relative;
-            background: var(--paper);
-        }
-
-        .scenario-card.best {
-            background: var(--brand-pink);
-            color: var(--text-on-dark);
-            border-color: var(--brand-pink);
-        }
-
-        .scenario-pct {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            opacity: 0.85;
-            color: inherit;
-        }
-
-        .scenario-hours {
-            font-family: 'Playfair Display', serif;
-            font-size: 26px;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .scenario-unit {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 4px;
-        }
-
-        .scenario-byn {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--brand-pink);
-        }
-
-        .scenario-card.best .scenario-byn {
-            color: #ffd6e0;
-        }
-
-        .roi-box {
-            border: 2px solid var(--text-on-light);
-            padding: 22px;
-            margin-bottom: 16px;
-            position: relative;
-            background: var(--paper);
-        }
-
-        .roi-box::before {
-            content: attr(data-label);
-            position: absolute;
-            top: -10px;
-            left: 16px;
-            background: var(--paper);
-            padding: 0 8px;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--accent-main);
-            font-weight: 500;
-        }
-
-        .roi-box.green2 {
-            border-color: var(--brand-pink);
-        }
-
-        .roi-box.green2::before {
-            color: var(--brand-pink);
-        }
-
-        .roi-box h4 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-on-light);
-        }
-
-        .roi-box ul {
-            padding-left: 16px;
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.9;
-        }
-
-        .objection-block {
-            background: var(--highlight-critical);
-            border: 1px solid #f4c2d0;
-            padding: 14px 16px;
-            margin-bottom: 10px;
-        }
-
-        .objection-text {
-            font-size: 12px;
-            font-style: italic;
-            color: #6b5a7a;
-            margin-bottom: 6px;
-        }
-
-        .objection-response {
-            font-size: 13px;
-            color: var(--text-on-light);
-        }
-
-        .priority-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .priority-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--rule);
-        }
-
-        .priority-item:last-child {
-            border-bottom: none;
-        }
-
-        .priority-badge {
-            flex-shrink: 0;
-            width: 28px;
-            height: 28px;
-            background: var(--dark-surface);
-            color: var(--text-on-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .priority-badge.p1 {
-            background: var(--brand-pink);
-        }
-
-        .priority-badge.p2 {
-            background: var(--brand-purple);
-        }
-
-        .priority-badge.p3 {
-            background: var(--accent-main);
-            color: var(--text-on-light);
-        }
-
-        .priority-name {
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-on-light);
-            margin-bottom: 2px;
-        }
-
-        .priority-desc {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .callout {
-            background: var(--highlight-warn);
-            border-left: 4px solid var(--accent-main);
-            padding: 14px 18px;
-            margin: 20px 0;
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-on-light);
-        }
-
-        .callout strong {
-            color: var(--accent-main);
-        }
-
-        .callout-warn {
-            background: #fff8ec;
-            border-left: 4px solid #d4900a;
-            padding: 14px 18px;
-            margin: 20px 0;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #5b4c97;
-        }
-
-        .callout-warn strong {
-            color: #b07800;
-        }
-
-        .footnote {
-            font-size: 11px;
-            color: var(--muted);
-            font-family: 'IBM Plex Mono', monospace;
-            line-height: 1.6;
-            border-top: 1px solid var(--rule);
-            padding-top: 20px;
-            margin-top: 40px;
-        }
-
-        .econ-detail-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        .econ-detail-table th {
-            background: var(--dark-surface);
-            color: white;
-            padding: 8px 12px;
-            text-align: left;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .econ-detail-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--rule);
-            font-size: 13px;
-            color: var(--text-on-light);
-        }
-
-        .econ-detail-table tr:nth-child(even) td {
-            background: var(--highlight);
-        }
-
-        .text-right {
-            text-align: right;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ИИ-чат-бот для регламентов — Анализ опроса · 21vek.by</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --purple: #990099;
+  --pink:   #ff0066;
+  --orange: #ff9534;
+  --text:   #5b4c97;
+  --light-bg: #FDF4FB;
+  --white:  #ffffff;
+  --muted:  #8a7ab0;
+  --rule:   #e8d8f0;
+}
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background: var(--light-bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── COVER ── */
+.cover {
+  background: linear-gradient(135deg, #990099 0%, #cc0066 40%, #ff0066 65%, #ff9534 100%);
+  padding: 64px 56px 56px;
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+}
+.cover::after {
+  content: '';
+  position: absolute;
+  right: -120px; top: -120px;
+  width: 520px; height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,149,52,0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cover-bubble {
+  display: inline-block;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-radius: 20px;
+  padding: 5px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 22px;
+}
+.cover h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.05;
+  max-width: 680px;
+  margin-bottom: 14px;
+}
+.cover-sub {
+  color: rgba(255,255,255,0.82);
+  font-size: 15px;
+  font-weight: 300;
+  max-width: 560px;
+  margin-bottom: 44px;
+}
+.cover-stats {
+  display: flex;
+  gap: 44px;
+  flex-wrap: wrap;
+}
+.cover-stat-num {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--orange);
+  line-height: 1;
+}
+.cover-stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 400;
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+
+/* ── BODY ── */
+.body { max-width: 920px; margin: 0 auto; padding: 52px 32px 80px; }
+
+/* ── SECTION HEADERS ── */
+.section { margin-bottom: 60px; }
+.section-head {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+.section-num {
+  background: var(--pink);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.section-title {
+  font-size: 22px; font-weight: 800;
+  color: var(--purple);
+}
+
+/* ── STAT CARDS ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  padding: 20px 18px;
+  border-radius: 2px;
+}
+.stat-card.purple { background: var(--purple); }
+.stat-card.pink   { background: var(--pink); }
+.stat-card.orange { background: var(--orange); }
+.stat-card.violet { background: var(--text); }
+.stat-card.light  { background: #fff; border: 1.5px solid var(--rule); }
+.stat-big {
+  font-size: 36px; font-weight: 900; line-height: 1;
+  color: #fff; margin-bottom: 3px;
+}
+.stat-card.light .stat-big { color: var(--purple); }
+.stat-unit { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500; }
+.stat-card.light .stat-unit { color: var(--muted); }
+.stat-desc { font-size: 10px; color: rgba(255,255,255,0.65); margin-top: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.stat-card.light .stat-desc { color: #bbaad0; }
+
+/* ── TABLES ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  background: var(--purple);
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.data-table th.r { text-align: right; }
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+.data-table td.r { text-align: right; font-weight: 500; }
+.data-table tr:nth-child(even) td { background: rgba(153,0,153,0.04); }
+.data-table tr.total td {
+  background: var(--text);
+  color: #fff;
+  font-weight: 700;
+  border-bottom: none;
+}
+.data-table tr.total td.accent { color: var(--orange); font-size: 15px; }
+.num { font-weight: 600; color: var(--pink); }
+
+/* ── BAR CHART ── */
+.bar-chart { margin: 20px 0; }
+.bar-row {
+  display: flex; align-items: center;
+  gap: 12px; margin-bottom: 9px;
+}
+.bar-lbl {
+  width: 88px; flex-shrink: 0;
+  font-size: 12px; font-weight: 500;
+  color: var(--muted); text-align: right;
+}
+.bar-track {
+  flex: 1; height: 24px;
+  background: rgba(153,0,153,0.08);
+  border-radius: 2px;
+  overflow: hidden; position: relative;
+}
+.bar-fill { height: 100%; border-radius: 2px; }
+.bar-val {
+  position: absolute; right: 8px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px; font-weight: 700;
+}
+.bar-val.dark { color: var(--text); }
+.bar-val.light-v { color: #fff; }
+
+/* ── WISH CARDS ── */
+.wish-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 620px) { .wish-grid { grid-template-columns: 1fr; } }
+.wish-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  padding: 16px 18px;
+  border-radius: 2px;
+}
+.wish-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.wish-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.wish-name { font-weight: 700; font-size: 13px; color: var(--purple); }
+.wish-count { font-size: 11px; font-weight: 700; color: var(--pink); margin-bottom: 8px; }
+.wish-quotes { font-size: 12px; color: var(--muted); line-height: 1.55; }
+.wish-quotes em { display: block; margin-bottom: 2px; font-style: italic; }
+
+/* ── QUOTE BLOCKS ── */
+.quote { 
+  border-left: 3px solid var(--pink);
+  background: #fff;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 0 2px 2px 0;
+}
+.quote.critical { border-left-color: var(--muted); }
+.quote-text { font-size: 13px; line-height: 1.55; }
+.quote-role { font-size: 10px; color: var(--muted); margin-top: 5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── CALLOUT ── */
+.callout {
+  background: rgba(255,0,102,0.07);
+  border-left: 4px solid var(--pink);
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 13px; line-height: 1.6;
+  border-radius: 0 4px 4px 0;
+}
+.callout strong { color: var(--pink); }
+.callout-warn {
+  background: rgba(255,149,52,0.1);
+  border-left: 4px solid var(--orange);
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 13px; line-height: 1.6;
+  border-radius: 0 4px 4px 0;
+}
+.callout-warn strong { color: var(--orange); }
+
+/* ── SCENARIO GRID ── */
+.scenario-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+  margin: 20px 0;
+}
+@media (max-width: 600px) { .scenario-grid { grid-template-columns: 1fr; } }
+.scenario-card { padding: 22px 18px; border-radius: 2px; }
+.scenario-card.a { background: var(--text); }
+.scenario-card.b { background: var(--pink); }
+.scenario-card.c { background: var(--purple); }
+.scenario-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 0.06em;
+}
+.scenario-label { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 8px; font-weight: 500; }
+.scenario-num { font-size: 28px; font-weight: 900; color: var(--orange); line-height: 1; margin-bottom: 3px; }
+.scenario-unit { font-size: 11px; color: rgba(255,255,255,0.65); margin-bottom: 10px; }
+.scenario-byn { font-size: 16px; font-weight: 700; color: var(--orange); }
+
+/* ── ROI BOXES ── */
+.roi-box {
+  border: 1.5px solid var(--rule);
+  background: #fff;
+  padding: 20px 22px;
+  margin-bottom: 12px;
+  position: relative;
+  border-radius: 2px;
+}
+.roi-box::before {
+  content: attr(data-label);
+  position: absolute; top: -10px; left: 16px;
+  background: var(--light-bg); padding: 0 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--pink);
+}
+.roi-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--purple); }
+.roi-box ul { padding-left: 16px; font-size: 13px; color: var(--muted); line-height: 1.9; }
+
+/* ── OBJECTION ── */
+.obj-block {
+  background: rgba(255,0,102,0.05);
+  border: 1px solid rgba(255,0,102,0.15);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+}
+.obj-q { font-size: 12px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
+.obj-a { font-size: 13px; color: var(--text); }
+
+/* ── PRIORITY LIST ── */
+.priority-list { list-style: none; }
+.priority-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--rule);
+}
+.priority-item:last-child { border-bottom: none; }
+.p-badge {
+  flex-shrink: 0; width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.p-badge.p1 { background: var(--pink); }
+.p-badge.p2 { background: var(--text); }
+.p-badge.p3 { background: var(--orange); }
+.p-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.p-desc { font-size: 12px; color: var(--muted); }
+
+/* ── BULLET MARKER ── */
+.bullet-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 10px;
+}
+.bullet-icon {
+  flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--pink);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.bullet-icon span { color: #fff; font-size: 12px; font-weight: 700; line-height: 1; }
+.bullet-text { font-size: 13px; color: var(--text); }
+
+/* ── PILL TAGS ── */
+.pill {
+  display: inline-block;
+  background: var(--pink);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px;
+  margin-bottom: 6px;
+}
+
+/* ── FOOTNOTE ── */
+.footnote {
+  font-size: 11px; color: var(--muted); line-height: 1.7;
+  border-top: 1px solid var(--rule);
+  padding-top: 20px; margin-top: 48px;
+}
+
+/* ── SEPARATOR ── */
+.sep {
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+  margin: 48px 0 36px;
+  border-radius: 2px;
+}
+</style>
 </head>
 <body>
 
-    <div class="cover">
-        <div class="cover-label">Аналитический отчёт · 21vek.by · ПВЗ — Уточнённая версия</div>
-        <div class="cover-title">ИИ-чат-бот для работы с регламентами</div>
-        <div class="cover-sub">Анализ результатов опроса, экстраполяция на весь персонал и финансовое обоснование разработки</div>
-        <div class="cover-meta">
-            <div class="meta-item">
-                <div class="meta-num">430</div>
-                <div class="meta-label">чел. в отделе</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-num">191</div>
-                <div class="meta-label">ответов в опросе</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-num">332K</div>
-                <div class="meta-label">BYN теряется в год</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-num">35 800</div>
-                <div class="meta-label">часов/год на поиск</div>
-            </div>
-        </div>
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-bubble">Аналитический отчёт · 21vek.by</div>
+  <h1>ИИ-чат-бот для работы с регламентами</h1>
+  <div class="cover-sub">Анализ результатов опроса сотрудников отдела, экстраполяция на весь персонал и финансовое обоснование разработки</div>
+  <div class="cover-stats">
+    <div>
+      <div class="cover-stat-num">430</div>
+      <div class="cover-stat-label">чел. в отделе</div>
+    </div>
+    <div>
+      <div class="cover-stat-num">191</div>
+      <div class="cover-stat-label">ответов в опросе</div>
+    </div>
+    <div>
+      <div class="cover-stat-num">35 802</div>
+      <div class="cover-stat-label">часов/год на поиск</div>
+    </div>
+    <div>
+      <div class="cover-stat-num">332 521</div>
+      <div class="cover-stat-label">BYN потерь в год</div>
+    </div>
+    <div>
+      <div class="cover-stat-num">&lt; 6 мес.</div>
+      <div class="cover-stat-label">срок окупаемости</div>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- 01 СОСТАВ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <span class="section-title">Состав отдела и охват опроса</span>
     </div>
 
-    <div class="body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Должность</th>
+          <th class="r">Всего в отделе</th>
+          <th class="r">Ответили</th>
+          <th class="r">Охват</th>
+          <th class="r">Ставка, BYN/ч</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Администратор</strong></td><td class="r num">342</td><td class="r">67</td><td class="r">19,6%</td><td class="r">8,93</td></tr>
+        <tr><td><strong>Старший администратор</strong></td><td class="r num">63</td><td class="r">19</td><td class="r">30,2%</td><td class="r">9,52</td></tr>
+        <tr><td><strong>Заведующий ПВЗ</strong></td><td class="r num">11</td><td class="r">2</td><td class="r">18,2%</td><td class="r">10,12</td></tr>
+        <tr><td><strong>Куратор</strong></td><td class="r num">9</td><td class="r">2</td><td class="r">22,2%</td><td class="r">14,28</td></tr>
+        <tr><td><strong>Наставник</strong></td><td class="r num">5</td><td class="r">1</td><td class="r">20,0%</td><td class="r">10,41</td></tr>
+        <tr class="total">
+          <td>ИТОГО</td>
+          <td class="r accent">430</td>
+          <td class="r accent">91 *</td>
+          <td class="r">~21%</td>
+          <td class="r">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;">* Временны́е данные заполнили 91 из 191 респондентов; пожелания — 51 человек.</p>
+  </div>
 
-        <!-- 1. СОСТАВ ОТДЕЛА -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">01</span>
-                <span class="section-title">Состав отдела и охват опроса</span>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Должность</th>
-                        <th class="right">Всего в отделе</th>
-                        <th class="right">Ответили в опросе</th>
-                        <th class="right">Охват</th>
-                        <th class="right">Ставка, BYN/ч</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="role-bold">Администратор</td>
-                        <td class="right num">342</td>
-                        <td class="right num">67</td>
-                        <td class="right">19,6%</td>
-                        <td class="right num">8,93</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Старший администратор</td>
-                        <td class="right num">63</td>
-                        <td class="right num">19</td>
-                        <td class="right">30,2%</td>
-                        <td class="right num">9,52</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Заведующий ПВЗ</td>
-                        <td class="right num">11</td>
-                        <td class="right num">2</td>
-                        <td class="right">18,2%</td>
-                        <td class="right num">10,12</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Куратор</td>
-                        <td class="right num">9</td>
-                        <td class="right num">2</td>
-                        <td class="right">22,2%</td>
-                        <td class="right num">14,28</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Наставник</td>
-                        <td class="right num">5</td>
-                        <td class="right num">1</td>
-                        <td class="right">20,0%</td>
-                        <td class="right num">10,41</td>
-                    </tr>
-                    <tr class="total">
-                        <td>ИТОГО</td>
-                        <td class="right accent-num">430</td>
-                        <td class="right accent-num">91*</td>
-                        <td class="right">~21%</td>
-                        <td class="right">—</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'IBM Plex Mono',monospace;">* Временны́е данные заполнили 91 из 191 респондентов; пожелания — 51 человек.</p>
-        </div>
+  <div class="sep"></div>
 
-        <!-- 2. ВРЕМЕННЫЕ ЗАТРАТЫ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">02</span>
-                <span class="section-title">Временны́е затраты — данные опроса</span>
-            </div>
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="stat-big">44</div>
-                    <div class="stat-unit">мин/день</div>
-                    <div class="stat-desc">Среднее (mean)</div>
-                </div>
-                <div class="stat-card light">
-                    <div class="stat-big">20</div>
-                    <div class="stat-unit">мин/день</div>
-                    <div class="stat-desc">Медиана — типичный сотрудник</div>
-                </div>
-                <div class="stat-card accent-main">
-                    <div class="stat-big">155</div>
-                    <div class="stat-unit">мин/нед</div>
-                    <div class="stat-desc">Среднее за неделю</div>
-                </div>
-                <div class="stat-card accent-purple">
-                    <div class="stat-big">502</div>
-                    <div class="stat-unit">мин/день</div>
-                    <div class="stat-desc">Максимум в выборке</div>
-                </div>
-            </div>
-
-            <p style="font-weight:600;margin-bottom:12px;font-size:13px;color:var(--text-on-light);">Распределение ежедневных затрат (n = 91)</p>
-            <div class="bar-row"><span class="bar-label">0 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:3.3%;background:#ccc;"></div><span class="bar-val">3 чел. (3,3%)</span>
-                </div>
-            </div>
-            <div class="bar-row"><span class="bar-label">1–5 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:20.9%;background:#b8a9d4;"></div><span class="bar-val on-dark">19 (20,9%)</span>
-                </div>
-            </div>
-            <div class="bar-row"><span class="bar-label">6–15 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:24.2%;background:var(--text-on-light);"></div><span class="bar-val on-dark">22 (24,2%)</span>
-                </div>
-            </div>
-            <div class="bar-row"><span class="bar-label">16–30 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:24.2%;background:var(--text-on-light);"></div><span class="bar-val on-dark">22 (24,2%)</span>
-                </div>
-            </div>
-            <div class="bar-row"><span class="bar-label">31–60 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:9.9%;background:var(--brand-purple);"></div><span class="bar-val on-dark">9 (9,9%)</span>
-                </div>
-            </div>
-            <div class="bar-row"><span class="bar-label">&gt;60 мин</span>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:17.6%;background:var(--brand-pink);"></div><span class="bar-val on-dark">16 (17,6%)</span>
-                </div>
-            </div>
-
-            <p style="font-weight:600;margin:24px 0 12px;font-size:13px;color:var(--text-on-light);">Показатели по должностям (из выборки)</p>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Роль</th>
-                        <th class="right">Среднее, мин/д</th>
-                        <th class="right">Медиана, мин/д</th>
-                        <th class="right">Применено в расчёте</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="role-bold">Администратор</td>
-                        <td class="right num">47,2</td>
-                        <td class="right num">20,0</td>
-                        <td class="right accent-num">20 мин</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Старший администратор</td>
-                        <td class="right num">32,9</td>
-                        <td class="right num">15,0</td>
-                        <td class="right accent-num">15 мин</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Заведующий ПВЗ</td>
-                        <td class="right num">22,5</td>
-                        <td class="right num">22,5</td>
-                        <td class="right accent-num">22,5 мин</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Куратор</td>
-                        <td class="right num">60,0</td>
-                        <td class="right num">60,0</td>
-                        <td class="right accent-num">40 мин*</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Наставник</td>
-                        <td class="right num">60,0</td>
-                        <td class="right num">60,0</td>
-                        <td class="right accent-num">40 мин*</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p style="font-size:11px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace;">* Для куратора и наставника n=2 и n=1 — применена консервативная оценка ниже среднего.</p>
-        </div>
-
-        <!-- 3. ФИНАНСОВЫЙ РАСЧЁТ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">03</span>
-                <span class="section-title">Финансовый расчёт потерь рабочего времени</span>
-            </div>
-            <table class="roi-table">
-                <thead>
-                    <tr>
-                        <th>Должность</th>
-                        <th class="right">Чел.</th>
-                        <th class="right">Мин/день</th>
-                        <th class="right">Ч/год (группа)</th>
-                        <th class="right">Ставка, BYN/ч</th>
-                        <th class="right">Потери, BYN/год</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="role-bold">Администратор</td>
-                        <td class="right num">342</td>
-                        <td class="right num">20</td>
-                        <td class="right num">28 500</td>
-                        <td class="right num">8,93</td>
-                        <td class="right accent-num">254 505</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Старший администратор</td>
-                        <td class="right num">63</td>
-                        <td class="right num">15</td>
-                        <td class="right num">3 938</td>
-                        <td class="right num">9,52</td>
-                        <td class="right accent-num">37 485</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Заведующий ПВЗ</td>
-                        <td class="right num">11</td>
-                        <td class="right num">22,5</td>
-                        <td class="right num">1 031</td>
-                        <td class="right num">10,12</td>
-                        <td class="right accent-num">10 436</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Куратор</td>
-                        <td class="right num">9</td>
-                        <td class="right num">40</td>
-                        <td class="right num">1 500</td>
-                        <td class="right num">14,28</td>
-                        <td class="right accent-num">21 420</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Наставник</td>
-                        <td class="right num">5</td>
-                        <td class="right num">40</td>
-                        <td class="right num">833</td>
-                        <td class="right num">10,41</td>
-                        <td class="right accent-num">8 675</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3"><strong>ИТОГО по отделу (430 чел.)</strong></td>
-                        <td class="right big">35 802 ч/год</td>
-                        <td class="right">—</td>
-                        <td class="right big">332 521 BYN/год</td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div class="stat-grid">
-                <div class="stat-card accent-main">
-                    <div class="stat-big">332 521</div>
-                    <div class="stat-unit">BYN / год</div>
-                    <div class="stat-desc">Стоимость потерь времени</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-big">1 330</div>
-                    <div class="stat-unit">BYN / день</div>
-                    <div class="stat-desc">Ежедневные потери</div>
-                </div>
-                <div class="stat-card accent-purple">
-                    <div class="stat-big">17,9</div>
-                    <div class="stat-unit">FTE</div>
-                    <div class="stat-desc">Эквивалент штатных единиц</div>
-                </div>
-                <div class="stat-card light">
-                    <div class="stat-big">76,5%</div>
-                    <div class="stat-unit">потерь</div>
-                    <div class="stat-desc">Приходится на администраторов</div>
-                </div>
-            </div>
-
-            <div class="callout-warn">
-                <strong>Примечание о кураторах:</strong> Несмотря на малую численность (9 чел.), кураторы теряют 21 420 BYN/год — непропорционально много из-за самой высокой ставки (14,28 BYN/ч). Вложение в инструмент для этой группы имеет высокий удельный ROI.
-            </div>
-        </div>
-
-        <!-- 4. СЦЕНАРИИ ЭКОНОМИИ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">04</span>
-                <span class="section-title">Сценарии возврата инвестиций</span>
-            </div>
-            <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Оценка годовой экономии при различных уровнях сокращения времени на поиск. Бенчмарк внедрений RAG-чат-ботов в операционных командах: 40–65% сокращение времени на поиск информации.</p>
-            <div class="scenario-grid">
-                <div class="scenario-card">
-                    <div class="scenario-pct">Консервативный · −40%</div>
-                    <div class="scenario-hours">14 321</div>
-                    <div class="scenario-unit">высвобождённых часов/год</div>
-                    <div class="scenario-byn">133 008 BYN/год</div>
-                </div>
-                <div class="scenario-card">
-                    <div class="scenario-pct">Базовый · −50%</div>
-                    <div class="scenario-hours">17 901</div>
-                    <div class="scenario-unit">высвобождённых часов/год</div>
-                    <div class="scenario-byn">166 261 BYN/год</div>
-                </div>
-                <div class="scenario-card best">
-                    <div class="scenario-pct">Оптимистичный · −60%</div>
-                    <div class="scenario-hours">21 481</div>
-                    <div class="scenario-unit">высвобождённых часов/год</div>
-                    <div class="scenario-byn">199 513 BYN/год</div>
-                </div>
-            </div>
-
-            <!-- Углублённое экономическое обоснование по должностям -->
-            <div class="section-header" style="margin-top: 40px;">
-                <span class="section-num">04.1</span>
-                <span class="section-title">Экономическое обоснование: окупаемость по ролям</span>
-            </div>
-            <p style="font-size:13px; color:var(--muted); margin-bottom: 16px;">
-                Исходя из стоимости часа работы сотрудников, можно рассчитать прямую экономию при консервативном сценарии (-40% времени поиска) и оценить вклад каждой роли в возврат инвестиций.
-            </p>
-            <table class="econ-detail-table">
-                <thead>
-                    <tr>
-                        <th>Роль</th>
-                        <th class="text-right">Экономия часов/год</th>
-                        <th class="text-right">Экономия BYN/год</th>
-                        <th class="text-right">Доля в общей экономии</th>
-                        <th>Комментарий</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="role-bold">Администратор</td>
-                        <td class="text-right num">11 400</td>
-                        <td class="text-right num" style="color:var(--brand-pink); font-weight:600;">101 802</td>
-                        <td class="text-right">76,5%</td>
-                        <td>Массовая роль — основной драйвер экономии</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Старший администратор</td>
-                        <td class="text-right num">1 575</td>
-                        <td class="text-right num" style="color:var(--brand-pink); font-weight:600;">14 994</td>
-                        <td class="text-right">11,3%</td>
-                        <td>Высвобождается время для контроля и обучения</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Заведующий ПВЗ</td>
-                        <td class="text-right num">412</td>
-                        <td class="text-right num" style="color:var(--brand-pink); font-weight:600;">4 174</td>
-                        <td class="text-right">3,1%</td>
-                        <td>Небольшая группа, но высокая цена ошибки</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Куратор</td>
-                        <td class="text-right num">600</td>
-                        <td class="text-right num" style="color:var(--brand-pink); font-weight:600;">8 568</td>
-                        <td class="text-right">6,4%</td>
-                        <td>Высокая ставка — быстрая окупаемость</td>
-                    </tr>
-                    <tr>
-                        <td class="role-bold">Наставник</td>
-                        <td class="text-right num">333</td>
-                        <td class="text-right num" style="color:var(--brand-pink); font-weight:600;">3 470</td>
-                        <td class="text-right">2,6%</td>
-                        <td>Усиление онбординга без доп. затрат</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td><strong>ИТОГО</strong></td>
-                        <td class="text-right"><strong>14 320</strong></td>
-                        <td class="text-right" style="color:var(--brand-pink); font-size:16px;"><strong>133 008</strong></td>
-                        <td class="text-right">100%</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <div class="callout">
-                <strong>Вывод по ROI:</strong> При консервативном сценарии ежегодная экономия составляет ~133 000 BYN. Если стоимость разработки и годового сопровождения бота оценивается в 30 000–50 000 BYN, срок окупаемости — <strong>менее 6 месяцев.</strong> Наиболее высокий удельный возврат дают кураторы (14,28 BYN/ч) и администраторы (массовость).
-            </div>
-        </div>
-
-        <!-- 5. ПОЖЕЛАНИЯ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">05</span>
-                <span class="section-title">Структура пожеланий к функционалу (51 ответ)</span>
-            </div>
-            <div class="wish-grid">
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">🔗</span><span class="wish-name">Ссылки на источники</span></div>
-                    <div class="wish-count">▲ 11 упоминаний — самая частая просьба</div>
-                    <div class="wish-examples">
-                        <em>«При ответе выдавал ссылки на регламенты сразу»</em>
-                        <em>«Давал гиперссылку, где посмотреть самому»</em>
-                        <em>«Ссылки на реальные источники, чтобы уточнить»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">🔍</span><span class="wish-name">Нечёткий поиск / понимание контекста</span></div>
-                    <div class="wish-count">▲ 8 упоминаний</div>
-                    <div class="wish-examples">
-                        <em>«Новые сотрудники ищут без опыта — по любым словам-триггерам»</em>
-                        <em>«Не по полному названию, а по одной фразе: "кредит под 4%"»</em>
-                        <em>«Понимал запросы с полуслова»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">✅</span><span class="wish-name">Актуальность информации</span></div>
-                    <div class="wish-count">▲ 7 упоминаний</div>
-                    <div class="wish-examples">
-                        <em>«В Битриксе многое уже не актуально — нужно своевременно обновлять»</em>
-                        <em>«Проверка на галлюцинации»</em>
-                        <em>«Ответ на который был в комментарии к новости — уйма времени на поиск»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">⚡</span><span class="wish-name">Скорость и точность ответа</span></div>
-                    <div class="wish-count">▲ 7 упоминаний</div>
-                    <div class="wish-examples">
-                        <em>«Мгновенный ответ»</em>
-                        <em>«Чёткий ответ без ухода в дебри»</em>
-                        <em>«Коротко и ясно без лишней воды»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">🗂️</span><span class="wish-name">Навигация и разделы / FAQ</span></div>
-                    <div class="wish-count">▲ 6 упоминаний</div>
-                    <div class="wish-examples">
-                        <em>«Разделение по тематикам: безнал, кредиты, возвраты»</em>
-                        <em>«Кнопки навигации по часто ищущим вопросам»</em>
-                        <em>«Вкладка часто задаваемых вопросов»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">📋</span><span class="wish-name">Пошаговые сценарии действий</span></div>
-                    <div class="wish-count">▲ 5 упоминаний</div>
-                    <div class="wish-examples">
-                        <em>«Пошаговая инструкция в ситуации»</em>
-                        <em>«Особенно для новичков: кредиты, лизинги, сверки, конфликты с товаром»</em>
-                        <em>«Поэтапный план действий по кейсу»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">🔄</span><span class="wish-name">Контекст диалога и эскалация</span></div>
-                    <div class="wish-count">▲ 3 упоминания</div>
-                    <div class="wish-examples">
-                        <em>«Помнить контекст — не генерировать ответ с нуля на каждый вопрос»</em>
-                        <em>«Если бот не знает — передать специалисту отдела помощи»</em>
-                    </div>
-                </div>
-                <div class="wish-card">
-                    <div class="wish-card-header"><span class="wish-icon">🖼️</span><span class="wish-name">Визуальный контент</span></div>
-                    <div class="wish-count">▲ 3 упоминания</div>
-                    <div class="wish-examples">
-                        <em>«Изображения для наглядности»</em>
-                        <em>«Фото — пример как что надо делать»</em>
-                        <em>«Подкрепление информации изображением»</em>
-                    </div>
-                </div>
-            </div>
-
-            <p style="font-weight:600;margin:28px 0 12px;font-size:13px;color:var(--text-on-light);">Критические отзывы (скептики — ~6–8% от давших ответ)</p>
-            <div class="quote-block critical">
-                <div class="quote-text">«Абсолютно не нужный функционал. Для удобной информации достаточно хештегов или путеводителя»</div>
-                <div class="quote-role">Старший администратор</div>
-            </div>
-            <div class="quote-block critical">
-                <div class="quote-text">«Главное — чтоб он действительно отвечал правильно. Иногда проще найти в чатах. И лишь живой человек ответит, когда нужно вникнуть в суть»</div>
-                <div class="quote-role">Старший администратор</div>
-            </div>
-            <div class="quote-block critical">
-                <div class="quote-text">«Кто будет ответственен за обновление? Если через MCP — какой лимит токенов? В случае ошибки ИИ — кто несёт наказание?»</div>
-                <div class="quote-role">Администратор (технически грамотный)</div>
-            </div>
-            <div class="callout">
-                <strong>Оценка:</strong> Критика содержательна и ценна. Замечания о галлюцинациях, актуальности и ответственности — это не аргументы против бота, а требования к его архитектуре и процессу эксплуатации.
-            </div>
-        </div>
-
-        <!-- 6. ОБОСНОВАНИЕ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">06</span>
-                <span class="section-title">Операционные обоснования</span>
-            </div>
-            <div class="roi-box" data-label="Клиентский сервис">
-                <h4>Сокращение времени обслуживания на стойке</h4>
-                <ul>
-                    <li>Нестандартные ситуации (возврат, кредит, лизинг, 14 дней) решаются без паузы «дайте уточню»</li>
-                    <li>Прямо названо в опросе: подпись кредитов, лизинги, сверки, конфликты с товаром</li>
-                    <li>Снижается зависимость качества ответа от стажа конкретного сотрудника</li>
-                </ul>
-            </div>
-            <div class="roi-box" data-label="Онбординг">
-                <h4>Ускорение адаптации новых сотрудников</h4>
-                <ul>
-                    <li>В опросе прямо отмечено: «особенно полезно для новичков»</li>
-                    <li>Снижает нагрузку на наставников и кураторов в период адаптации</li>
-                    <li>Кривая обучения сокращается без дополнительных ресурсов HR</li>
-                </ul>
-            </div>
-            <div class="roi-box" data-label="Управление знаниями">
-                <h4>Систематизация базы регламентов</h4>
-                <ul>
-                    <li>Сейчас документация рассредоточена по Битриксу, базе знаний и «шпаргалкам» — бот принуждает к единому хранилищу</li>
-                    <li>Логи запросов выявляют «слепые зоны» — темы с высокой частотой обращений при низком качестве документации</li>
-                    <li>Инфраструктура знаний масштабируется без роста штата методологов</li>
-                </ul>
-            </div>
-            <div class="roi-box green2" data-label="Снижение рисков">
-                <h4>Операционные ошибки и compliance</h4>
-                <ul>
-                    <li>Единый и консистентный ответ = меньше ошибок при работе с финансовыми документами</li>
-                    <li>Сотрудник перестаёт работать «по памяти» в нестандартных случаях</li>
-                    <li>Снижается количество обращений в поддержку по типовым вопросам</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- 7. РАБОТА С ВОЗРАЖЕНИЯМИ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">07</span>
-                <span class="section-title">Работа с ключевыми возражениями</span>
-            </div>
-            <div class="objection-block">
-                <div class="objection-text">«Достаточно хештегов или путеводителя»</div>
-                <div class="objection-response">Хештеги решают задачу навигации по документу, но не интерпретацию правил в конкретном кейсе. 24% выборки тратят 16–30 мин/день — это не проблема навигации, это проблема применения правил к ситуации.</div>
-            </div>
-            <div class="objection-block">
-                <div class="objection-text">«ИИ может давать неверные ответы»</div>
-                <div class="objection-response">Решается архитектурно: RAG-режим (ответ только на основе загруженных актуальных документов), обязательная ссылка на источник в каждом ответе, кнопка эскалации к специалисту. Сотрудник всегда знает, откуда пришёл ответ.</div>
-            </div>
-            <div class="objection-block">
-                <div class="objection-text">«Кто отвечает за ошибку бота?»</div>
-                <div class="objection-response">Ответственность за содержание базы знаний несёт методолог/редактор, как это происходит сейчас с Битриксом. Ошибка бота = ошибка устаревшего документа. Ссылка на источник делает цепочку ответственности прозрачной.</div>
-            </div>
-            <div class="objection-block">
-                <div class="objection-text">«Лучше потратить деньги на мотивацию»</div>
-                <div class="objection-response">Разные бюджеты, разные задачи. Кроме того, освобождение 20–40 мин/день от рутинного поиска — само по себе фактор удовлетворённости работой. По данным опросов Gallup, автоматизация рутины входит в топ-5 факторов вовлечённости.</div>
-            </div>
-        </div>
-
-        <!-- 8. ПРИОРИТЕТЫ -->
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">08</span>
-                <span class="section-title">Рекомендуемые приоритеты функционала</span>
-            </div>
-            <ul class="priority-list">
-                <li class="priority-item">
-                    <div class="priority-badge p1">P1</div>
-                    <div>
-                        <div class="priority-name">Ответ + обязательная ссылка на документ-источник</div>
-                        <div class="priority-desc">11 упоминаний. Критичный минимум доверия. Без этого бот не будет использоваться.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p1">P1</div>
-                    <div>
-                        <div class="priority-name">Нечёткий / ключевой поиск (семантический)</div>
-                        <div class="priority-desc">8 упоминаний. Сотрудник не знает точный термин, особенно новичок — бот должен понять и это.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p1">P1</div>
-                    <div>
-                        <div class="priority-name">Процесс актуализации базы знаний (орг. требование)</div>
-                        <div class="priority-desc">7 упоминаний. Не функция бота, но ключевое условие его полезности. Нужен ответственный редактор и регламент обновлений.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p2">P2</div>
-                    <div>
-                        <div class="priority-name">FAQ и быстрые кнопки по частым темам</div>
-                        <div class="priority-desc">6 упоминаний. Кредиты, возвраты 14 дней, лизинг, работа с 1С — выделить как быстрый доступ без ввода текста.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p2">P2</div>
-                    <div>
-                        <div class="priority-name">Пошаговые сценарии для типовых ситуаций</div>
-                        <div class="priority-desc">5 упоминаний. Особенно востребовано у новых сотрудников и при сложных кейсах с финансовыми документами.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p3">P3</div>
-                    <div>
-                        <div class="priority-name">Эскалация на живого специалиста</div>
-                        <div class="priority-desc">3 упоминания. «Бот не знает → передаёт дежурному». Снижает риск потери клиента и ошибки.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p3">P3</div>
-                    <div>
-                        <div class="priority-name">Контекст диалога (память сессии)</div>
-                        <div class="priority-desc">3 упоминания. Уточнять кейс шаг за шагом, не переформулируя запрос заново.</div>
-                    </div>
-                </li>
-                <li class="priority-item">
-                    <div class="priority-badge p3">P3</div>
-                    <div>
-                        <div class="priority-name">Изображения и наглядные примеры</div>
-                        <div class="priority-desc">3 упоминания. Желателен для наглядных инструкций. Не критичен для MVP, но ценен для обучения.</div>
-                    </div>
-                </li>
-            </ul>
-        </div>
-
-        <div class="footnote">
-            <p><strong>Методология и допущения.</strong> Выборка: 191 ответ, временны́е данные — 91 респондент. В расчёте использованы медианные значения как устойчивые к выбросам (максимум 502 мин/день — очевидная ошибка ввода). Для куратора и наставника применена консервативная оценка 40 мин/день (факт. среднее = 60 мин при n≤2). Рабочий год = 250 дней. Стоимость потерь = фактические ставки, предоставленные заказчиком. Финансовые сценарии экономии не учитывают косвенные эффекты (качество сервиса, снижение ошибок, онбординг) — реальный ROI выше расчётного.</p>
-        </div>
-
+  <!-- 02 ВРЕМЯ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <span class="section-title">Временны́е затраты — данные опроса</span>
     </div>
+
+    <div class="stat-grid">
+      <div class="stat-card purple">
+        <div class="stat-big">44</div>
+        <div class="stat-unit">мин / день</div>
+        <div class="stat-desc">Среднее по выборке</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-big">20</div>
+        <div class="stat-unit">мин / день</div>
+        <div class="stat-desc">Медиана (типичный сотрудник)</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-big">155</div>
+        <div class="stat-unit">мин / нед</div>
+        <div class="stat-desc">Среднее за неделю</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-big">27,5%</div>
+        <div class="stat-unit">тратят &gt; 30 мин/день</div>
+        <div class="stat-desc">Аномально высоко для справочной задачи</div>
+      </div>
+    </div>
+
+    <p style="font-weight:700;margin:20px 0 12px;font-size:13px;">Распределение ежедневных затрат (n = 91)</p>
+
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-lbl">0 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:3.3%;background:#ddd;"></div><span class="bar-val dark" style="right:auto;left:6px;color:#999">3 чел.</span></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">1–5 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:20.9%;background:#c9a8d8;"></div><span class="bar-val dark" style="right:auto;left:calc(20.9% + 6px)">19</span></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">6–15 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:24.2%;background:var(--text);"></div><span class="bar-val light-v">22</span></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">16–30 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:24.2%;background:var(--text);"></div><span class="bar-val light-v">22</span></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">31–60 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:9.9%;background:var(--purple);"></div><span class="bar-val dark" style="right:auto;left:calc(9.9% + 6px)">9</span></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-lbl">&gt;60 мин</span>
+        <div class="bar-track"><div class="bar-fill" style="width:17.6%;background:var(--pink);"></div><span class="bar-val light-v">16</span></div>
+      </div>
+    </div>
+
+    <div class="callout"><strong>Ключевой вывод:</strong> 27,5% сотрудников тратят более 30 минут в день — это аномально высоко для справочной задачи. У 17,6% выборки зафиксировано более 1 часа в сутки.</div>
+
+    <p style="font-weight:700;margin:24px 0 12px;font-size:13px;">По должностям (из опроса)</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Роль</th>
+          <th class="r">Среднее, мин/день</th>
+          <th class="r">Медиана, мин/день</th>
+          <th class="r">Применено в расчёте</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Администратор</strong></td><td class="r">47,2</td><td class="r">20,0</td><td class="r num">20 мин</td></tr>
+        <tr><td><strong>Старший администратор</strong></td><td class="r">32,9</td><td class="r">15,0</td><td class="r num">15 мин</td></tr>
+        <tr><td><strong>Заведующий ПВЗ</strong></td><td class="r">22,5</td><td class="r">22,5</td><td class="r num">22,5 мин</td></tr>
+        <tr><td><strong>Куратор</strong></td><td class="r">60,0</td><td class="r">60,0</td><td class="r num">40 мин *</td></tr>
+        <tr><td><strong>Наставник</strong></td><td class="r">60,0</td><td class="r">60,0</td><td class="r num">40 мин *</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;">* Для куратора и наставника n≤2 — применена консервативная оценка ниже фактического среднего.</p>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 03 ФИНАНСЫ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <span class="section-title">Финансовый расчёт потерь рабочего времени</span>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Должность</th>
+          <th class="r">Чел.</th>
+          <th class="r">Мин/день</th>
+          <th class="r">Ч/год (группа)</th>
+          <th class="r">Ставка, BYN/ч</th>
+          <th class="r">Потери, BYN/год</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Администратор</strong></td><td class="r">342</td><td class="r">20</td><td class="r">28 500</td><td class="r">8,93</td><td class="r num">254 505</td></tr>
+        <tr><td><strong>Старший администратор</strong></td><td class="r">63</td><td class="r">15</td><td class="r">3 938</td><td class="r">9,52</td><td class="r num">37 485</td></tr>
+        <tr><td><strong>Заведующий ПВЗ</strong></td><td class="r">11</td><td class="r">22,5</td><td class="r">1 031</td><td class="r">10,12</td><td class="r num">10 436</td></tr>
+        <tr><td><strong>Куратор</strong></td><td class="r">9</td><td class="r">40</td><td class="r">1 500</td><td class="r">14,28</td><td class="r num">21 420</td></tr>
+        <tr><td><strong>Наставник</strong></td><td class="r">5</td><td class="r">40</td><td class="r">833</td><td class="r">10,41</td><td class="r num">8 675</td></tr>
+        <tr class="total">
+          <td><strong>ИТОГО (430 чел.)</strong></td>
+          <td class="r">—</td>
+          <td class="r">—</td>
+          <td class="r accent">35 802 ч/год</td>
+          <td class="r">—</td>
+          <td class="r accent">332 521 BYN/год</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="stat-grid" style="margin-top:20px;">
+      <div class="stat-card pink">
+        <div class="stat-big">332 521</div>
+        <div class="stat-unit">BYN / год</div>
+        <div class="stat-desc">Прямая стоимость потерь</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-big">1 330</div>
+        <div class="stat-unit">BYN / день</div>
+        <div class="stat-desc">Ежедневные потери</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-big">17,9</div>
+        <div class="stat-unit">FTE</div>
+        <div class="stat-desc">Эквивалент штатных ставок</div>
+      </div>
+      <div class="stat-card light">
+        <div class="stat-big">78,4%</div>
+        <div class="stat-unit">потерь</div>
+        <div class="stat-desc">Приходится на администраторов</div>
+      </div>
+    </div>
+
+    <div class="callout-warn"><strong>Примечание о кураторах:</strong> При численности всего 9 человек кураторы теряют 21 420 BYN/год — непропорционально много, из-за самой высокой ставки (14,28 BYN/ч). Вложение в инструмент для этой группы имеет высокий удельный ROI.</div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 04 ROI -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <span class="section-title">Сценарии возврата инвестиций</span>
+    </div>
+
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Бенчмарк внедрений RAG-чат-ботов в операционных командах: 40–65% сокращение времени на поиск информации.</p>
+
+    <div class="scenario-grid">
+      <div class="scenario-card a">
+        <div class="scenario-badge">Консервативный · −40%</div>
+        <div class="scenario-num">14 321</div>
+        <div class="scenario-unit">высвобождённых часов / год</div>
+        <div class="scenario-byn">133 008 BYN / год</div>
+      </div>
+      <div class="scenario-card b">
+        <div class="scenario-badge">Базовый · −50%</div>
+        <div class="scenario-num">17 901</div>
+        <div class="scenario-unit">высвобождённых часов / год</div>
+        <div class="scenario-byn">166 261 BYN / год</div>
+      </div>
+      <div class="scenario-card c">
+        <div class="scenario-badge">Оптимистичный · −60%</div>
+        <div class="scenario-num">21 481</div>
+        <div class="scenario-unit">высвобождённых часов / год</div>
+        <div class="scenario-byn">199 513 BYN / год</div>
+      </div>
+    </div>
+
+    <div class="callout"><strong>Окупаемость:</strong> При консервативном сценарии (-40%) ежегодная экономия ~133 000 BYN. Если разработка и первый год обслуживания обойдутся в 30 000–50 000 BYN — срок окупаемости <strong>менее 6 месяцев</strong>. Расчёт включает только прямые трудозатраты — без учёта снижения ошибок, качества сервиса и ускорения онбординга.</div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 05 ПОЖЕЛАНИЯ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <span class="section-title">Структура пожеланий к функционалу (51 ответ)</span>
+    </div>
+
+    <div class="wish-grid">
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">🔗</span><span class="wish-name">Ссылки на источники</span></div>
+        <div class="wish-count">▲ 11 упоминаний — самая частая просьба</div>
+        <div class="wish-quotes">
+          <em>«При ответе выдавал ссылки на регламенты сразу»</em>
+          <em>«Давал гиперссылку, где посмотреть самому»</em>
+          <em>«Ссылки на реальные источники, чтобы уточнить»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">🔍</span><span class="wish-name">Нечёткий поиск / понимание контекста</span></div>
+        <div class="wish-count">▲ 8 упоминаний</div>
+        <div class="wish-quotes">
+          <em>«Поиск по любым словам-триггерам, т.к. новые сотрудники не знают нужных терминов»</em>
+          <em>«Не по полному названию, а по одной фразе: "кредит под 4%"»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">✅</span><span class="wish-name">Актуальность информации</span></div>
+        <div class="wish-count">▲ 7 упоминаний</div>
+        <div class="wish-quotes">
+          <em>«В Битриксе многое уже не актуально — нужно своевременно обновлять»</em>
+          <em>«Проверка на галлюцинации в ответах»</em>
+          <em>«После запрета действия нет инфо, как работать дальше»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">⚡</span><span class="wish-name">Скорость и точность ответа</span></div>
+        <div class="wish-count">▲ 7 упоминаний</div>
+        <div class="wish-quotes">
+          <em>«Мгновенный ответ»</em>
+          <em>«Чёткий ответ без ухода в дебри»</em>
+          <em>«Коротко и ясно без лишней воды»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">🗂️</span><span class="wish-name">Навигация и разделы / FAQ</span></div>
+        <div class="wish-count">▲ 6 упоминаний</div>
+        <div class="wish-quotes">
+          <em>«Разделение по тематикам: безнал, кредиты, возвраты»</em>
+          <em>«Кнопки навигации по часто задаваемым вопросам»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">📋</span><span class="wish-name">Пошаговые сценарии действий</span></div>
+        <div class="wish-count">▲ 5 упоминаний</div>
+        <div class="wish-quotes">
+          <em>«Пошаговая инструкция действий в ситуации»</em>
+          <em>«Особенно для новичков: кредиты, лизинги, сверки»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">🔄</span><span class="wish-name">Контекст диалога и эскалация</span></div>
+        <div class="wish-count">▲ 3 упоминания</div>
+        <div class="wish-quotes">
+          <em>«Помнить контекст — не генерировать ответ с нуля на каждый вопрос»</em>
+          <em>«Если бот не знает — передать специалисту»</em>
+        </div>
+      </div>
+      <div class="wish-card">
+        <div class="wish-header"><span class="wish-icon">🖼️</span><span class="wish-name">Визуальный контент</span></div>
+        <div class="wish-count">▲ 3 упоминания</div>
+        <div class="wish-quotes">
+          <em>«Изображения для наглядности»</em>
+          <em>«Фото — пример как что надо делать»</em>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-weight:700;margin:28px 0 12px;font-size:13px;">Критические отзывы (скептики — ~6–8% от давших ответ)</p>
+
+    <div class="quote critical">
+      <div class="quote-text">«Абсолютно не нужный функционал. Для удобного поиска достаточно добавить хештеги или сделать путеводитель»</div>
+      <div class="quote-role">Старший администратор</div>
+    </div>
+    <div class="quote critical">
+      <div class="quote-text">«Главное — чтоб он действительно отвечал правильно. Иногда проще найти в чатах. И лишь живой человек ответит, когда нужно вникнуть в суть»</div>
+      <div class="quote-role">Старший администратор</div>
+    </div>
+    <div class="quote critical">
+      <div class="quote-text">«Кто будет ответственен за обновление базы? В случае ошибки ИИ — кто несёт ответственность?»</div>
+      <div class="quote-role">Администратор</div>
+    </div>
+
+    <div class="callout"><strong>Оценка:</strong> Критика содержательна и ценна. Замечания о галлюцинациях, актуальности и ответственности — не аргументы против бота, а архитектурные требования: RAG-подход, обязательные ссылки на источники, регламент обновления.</div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 06 ОБОСНОВАНИЕ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <span class="section-title">Операционные обоснования</span>
+    </div>
+
+    <div class="roi-box" data-label="Клиентский сервис">
+      <h4>Сокращение времени обслуживания на стойке</h4>
+      <ul>
+        <li>Нестандартные ситуации (возврат, кредит, лизинг, 14 дней) решаются без паузы «дайте уточню»</li>
+        <li>Прямо названо в опросе: кредиты, лизинги, сверки, конфликты с товаром</li>
+        <li>Снижается зависимость качества ответа от стажа конкретного сотрудника</li>
+      </ul>
+    </div>
+
+    <div class="roi-box" data-label="Онбординг">
+      <h4>Ускорение адаптации новых сотрудников</h4>
+      <ul>
+        <li>В опросе прямо отмечено: «особенно полезно для новичков»</li>
+        <li>Снижает нагрузку на наставников и кураторов в период адаптации</li>
+        <li>Кривая обучения сокращается без дополнительных ресурсов HR</li>
+      </ul>
+    </div>
+
+    <div class="roi-box" data-label="Управление знаниями">
+      <h4>Систематизация базы регламентов</h4>
+      <ul>
+        <li>Сейчас документация рассредоточена по Битриксу, базе знаний и шпаргалкам — бот принуждает к единому хранилищу</li>
+        <li>Логи запросов выявляют «слепые зоны» — темы с высокой частотой при низком качестве документации</li>
+        <li>Масштабируется без роста штата методологов</li>
+      </ul>
+    </div>
+
+    <div class="roi-box" data-label="Снижение операционных рисков">
+      <h4>Ошибки и compliance</h4>
+      <ul>
+        <li>Единый и консистентный ответ = меньше ошибок при работе с финансовыми документами</li>
+        <li>Сотрудник перестаёт работать «по памяти» в нестандартных ситуациях</li>
+        <li>Снижается количество обращений в поддержку по типовым вопросам</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 07 ВОЗРАЖЕНИЯ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">07</span>
+      <span class="section-title">Работа с ключевыми возражениями</span>
+    </div>
+
+    <div class="obj-block">
+      <div class="obj-q">«Достаточно хештегов или путеводителя»</div>
+      <div class="obj-a">Хештеги решают навигацию по документу, но не интерпретацию правил в конкретном кейсе. 24% выборки тратят 16–30 мин/день — это не проблема поиска документа, это проблема применения правил к нестандартной ситуации.</div>
+    </div>
+    <div class="obj-block">
+      <div class="obj-q">«ИИ может давать неверные ответы (галлюцинации)»</div>
+      <div class="obj-a">Решается архитектурно: RAG-режим (ответ строго на основе загруженных документов), обязательная ссылка на источник в каждом ответе, кнопка эскалации к специалисту. Сотрудник всегда видит, откуда пришёл ответ.</div>
+    </div>
+    <div class="obj-block">
+      <div class="obj-q">«Кто отвечает за ошибку бота?»</div>
+      <div class="obj-a">Ответственность за содержание несёт редактор базы знаний — как сейчас с Битриксом. Ошибка бота = ошибка устаревшего документа. Ссылка на источник делает цепочку ответственности прозрачной.</div>
+    </div>
+    <div class="obj-block">
+      <div class="obj-q">«Лучше потратить деньги на мотивацию»</div>
+      <div class="obj-a">Разные бюджеты, разные задачи. Кроме того, освобождение 20–40 мин/день от рутинного поиска само по себе фактор удовлетворённости. По данным Gallup, автоматизация рутины входит в топ-5 факторов вовлечённости.</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 08 ПРИОРИТЕТЫ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">08</span>
+      <span class="section-title">Рекомендуемые приоритеты функционала</span>
+    </div>
+
+    <ul class="priority-list">
+      <li class="priority-item">
+        <div class="p-badge p1">P1</div>
+        <div>
+          <div class="p-name">Ответ + обязательная ссылка на документ-источник</div>
+          <div class="p-desc">11 упоминаний. Критичный минимум доверия — без этого бот не будет использоваться.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p1">P1</div>
+        <div>
+          <div class="p-name">Нечёткий / семантический поиск</div>
+          <div class="p-desc">8 упоминаний. Сотрудник не знает точный термин, особенно новичок — бот должен понять запрос с полуслова.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p1">P1</div>
+        <div>
+          <div class="p-name">Процесс актуализации базы знаний (организационное требование)</div>
+          <div class="p-desc">7 упоминаний. Не функция бота, но ключевое условие его полезности: ответственный редактор + регламент обновлений.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p2">P2</div>
+        <div>
+          <div class="p-name">FAQ и быстрые кнопки по частым темам</div>
+          <div class="p-desc">6 упоминаний. Кредиты, возвраты 14 дней, лизинг, работа с 1С — выделить как быстрый доступ без ввода текста.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p2">P2</div>
+        <div>
+          <div class="p-name">Пошаговые сценарии для типовых ситуаций</div>
+          <div class="p-desc">5 упоминаний. Особенно востребовано у новых сотрудников и при сложных финансовых кейсах.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p3">P3</div>
+        <div>
+          <div class="p-name">Эскалация на живого специалиста</div>
+          <div class="p-desc">3 упоминания. «Бот не знает → передаёт дежурному». Снижает риск потери клиента и ошибки.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p3">P3</div>
+        <div>
+          <div class="p-name">Контекст диалога (память сессии)</div>
+          <div class="p-desc">3 упоминания. Уточнять кейс шаг за шагом, не переформулируя запрос заново.</div>
+        </div>
+      </li>
+      <li class="priority-item">
+        <div class="p-badge p3">P3</div>
+        <div>
+          <div class="p-name">Изображения и наглядные примеры</div>
+          <div class="p-desc">3 упоминания. Желателен для наглядных инструкций. Не критичен для MVP, но ценен при обучении.</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="footnote">
+    <strong>Методология и допущения.</strong> Выборка: 191 ответ, временны́е данные — 91 респондент, пожелания — 51. Использованы медианные значения как устойчивые к выбросам (максимум 502 мин/день — очевидная ошибка ввода). Для куратора и наставника применена консервативная оценка 40 мин/день (фактическое среднее = 60 мин при n≤2). Рабочий год = 250 дней. Стоимость потерь рассчитана по фактическим ставкам, предоставленным заказчиком. Сценарии экономии не включают косвенные эффекты (качество сервиса, снижение ошибок, онбординг) — реальный ROI выше расчётного.
+  </div>
+
+</div>
 </body>
 </html>
